@@ -1,5 +1,3 @@
-# ai.py
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -21,39 +19,36 @@ class BudgetModel(nn.Module):
     def forward(self, x):
         return self.fc(x)
 
-def train_model():
-    # Example data: You can replace this with user-uploaded data or larger dataset
-    data = {
-        'income': [3000, 3200, 3100, 3050, 3300],
-        'rent': [1000, 1000, 1000, 1000, 1000],
-        'food': [400, 420, 410, 405, 430],
-        'entertainment': [150, 200, 180, 170, 210],
-        'transport': [120, 130, 125, 130, 135],
-        'savings': [600, 700, 650, 680, 720],
-    }
+def train_model(input_size, monthly_income, num_samples=100):
+    """
+    Generate synthetic training data with an arbitrary number of expense categories (input_size).
+    For each sample, generate random expense values and compute:
+        savings = monthly_income - sum(expenses)
+    """
+    # For reproducibility
+    np.random.seed(42)
     
-    df = pd.DataFrame(data)
-
-    # Split data into features and target variable
-    X = df.drop(columns=['savings']).values
-    y = df[['savings']].values
-
-    # Scaling data
+    # We choose a maximum expense per category such that the total expenses stay below monthly income.
+    # Here we allow at most 60% of monthly income to be allotted to expenses.
+    max_expense = monthly_income * 0.6 / input_size
+    X = np.random.uniform(low=0.0, high=max_expense, size=(num_samples, input_size))
+    y = monthly_income - np.sum(X, axis=1, keepdims=True)
+    
+    # Scale both features and target values
     scaler_x = MinMaxScaler()
     scaler_y = MinMaxScaler()
-
     X_scaled = scaler_x.fit_transform(X)
     y_scaled = scaler_y.fit_transform(y)
-
-    # Convert data into PyTorch tensors
+    
+    # Convert to PyTorch tensors
     X_tensor = torch.tensor(X_scaled, dtype=torch.float32)
     y_tensor = torch.tensor(y_scaled, dtype=torch.float32)
-
-    # Initialize the model, loss function, and optimizer
-    model = BudgetModel(X.shape[1])
+    
+    # Build the model with the dynamic input size
+    model = BudgetModel(input_size)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.01)
-
+    
     # Training loop
     for epoch in range(500):
         model.train()
@@ -62,6 +57,17 @@ def train_model():
         loss = criterion(output, y_tensor)
         loss.backward()
         optimizer.step()
-
-    # Return trained model and scalers
+    
     return model, scaler_x, scaler_y
+
+def fetch_and_predict_stocks(savings):
+    """
+    Mock function to return stock predictions based on savings.
+    In a real application, this function might query an API or a prediction model.
+    """
+    stock_suggestions = {
+        'AAPL': torch.tensor([145.00]),
+        'GOOG': torch.tensor([2725.00]),
+        'AMZN': torch.tensor([3345.00]),
+    }
+    return stock_suggestions

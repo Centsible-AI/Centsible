@@ -1,4 +1,6 @@
-# Centsible
+<h1 align="center">Centsible</h1>
+<h2 align="center">Make Every Cent Count!</h2>
+
 
 **Centsible** is a cutting-edge financial management app designed to empower you to take control of your money. With deeply personalized budgeting, dynamic stock recommendations, an intuitive tax filer, and our AI-powered Budget Buddy chatbot, Centsible makes managing your finances simple, accessible, and tailored to your unique needs—all for just $8.99 per month.
 

@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import torch
-from ai import train_model, fetch_and_predict_stocks
+from ai import train_model, fetch_and_predict_stocks, adjust_non_necessities_for_savings, suggest_budget
 
 # --- Page setup ---
 st.set_page_config(page_title="Centsible 💸", layout="centered")
@@ -87,54 +87,102 @@ yearly_income = st.number_input("Yearly Income ($)", min_value=0.0, value=0.0, s
 monthly_income = yearly_income / 12
 st.write(f"Your monthly income is: **${monthly_income:.2f}**")
 
-# Expense categories
+# Expense categories - Necessities and Non-Necessities
 st.write("Enter your custom expense categories:")
-category_count = st.number_input("Number of Expense Categories", min_value=1, value=1, step=1)
 
-categories = []
-for i in range(int(category_count)):
+# Input for Necessities
+st.subheader("Necessities")
+necessities = []
+num_necessities = st.number_input("Number of Necessity Categories", min_value=1, value=1, step=1)
+for i in range(int(num_necessities)):
     col1, col2 = st.columns([2, 1])
     with col1:
-        name = st.text_input(f"Category {i+1} Name", key=f"name_{i}")
+        name = st.text_input(f"Necessity Category {i+1} Name", key=f"necessity_name_{i}")
     with col2:
-        value = st.number_input(f"Value ($)", min_value=0.0, value=0.0, step=0.01, key=f"value_{i}")
+        value = st.number_input(f"Value ($)", min_value=0.0, value=0.0, step=0.01, key=f"necessity_value_{i}")
     if name:
-        categories.append((name, value))
+        necessities.append((name, value))
+
+# Input for Non-Necessities
+st.subheader("Non-Necessities")
+non_necessities = []
+num_non_necessities = st.number_input("Number of Non-Necessity Categories", min_value=1, value=1, step=1)
+for i in range(int(num_non_necessities)):
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        name = st.text_input(f"Non-Necessity Category {i+1} Name", key=f"non_necessity_name_{i}")
+    with col2:
+        value = st.number_input(f"Value ($)", min_value=0.0, value=0.0, step=0.01, key=f"non_necessity_value_{i}")
+    if name:
+        non_necessities.append((name, value))
 
 # Show entered categories
-if categories:
+if necessities or non_necessities:
     st.write("Your entered expense categories:")
-    for category, value in categories:
-        st.write(f"- {category}: ${value:.2f}")
+    for category, value in necessities:
+        st.write(f"- Necessity: **{category}**: ${value:.2f}")
+    for category, value in non_necessities:
+        st.write(f"- Non-Necessity: **{category}**: ${value:.2f}")
 
 # Suggest budget
 if st.button("Suggest Budget"):
-    if not categories or len(categories) != int(category_count):
-        st.error("Please add all categories before suggesting a budget.")
+    if not (necessities or non_necessities):
+        st.error("Please add categories before suggesting a budget.")
     else:
-        values = [val for _, val in categories]
+        # Gather the expenses and create input array
+        values = [val for _, val in necessities] + [val for _, val in non_necessities]
         user_input = np.array([values])
 
-        model, scaler_x, scaler_y = train_model(len(categories), monthly_income)
+        # Get the model and scalers
+        model, scaler_x, scaler_y = train_model(len(necessities) + len(non_necessities), monthly_income)
+        
+        # Scale and transform the user input
         user_scaled = scaler_x.transform(user_input)
         user_tensor = torch.tensor(user_scaled, dtype=torch.float32)
+        
+        # Get predicted savings
         predicted_value = model(user_tensor).item()
-
         predicted_savings = scaler_y.inverse_transform([[predicted_value]])
         suggested_savings = float(predicted_savings[0][0])
+
+        # Ensure the suggested savings and spending are reasonable
         suggested_spending = monthly_income - suggested_savings
 
-        st.success(f"✅ You could aim to save **${suggested_savings:.2f}** this month.")
-        st.write(f"🔧 That leaves **${suggested_spending:.2f}** for spending.")
+        # Use the new adjusted budget suggestion function
+        budget_suggestion = suggest_budget(necessities, non_necessities, monthly_income)
+        suggested_savings = budget_suggestion["suggested_savings"]
+        suggested_spending = budget_suggestion["suggested_spending"]
+        adjusted_non_necessities = budget_suggestion["adjusted_non_necessities"]
 
-        st.markdown("---")
-        st.subheader("💡 Suggested Budget Breakdown")
-        for category, value in categories:
-            st.write(f"- **{category}**: ${value:.2f}")
-        st.write(f"- 💾 **Savings**: **${suggested_savings:.2f}**")
+        # Display results
+        if suggested_spending < 0:
+            st.error("Your expenses exceed your income. Please adjust the values.")
+        else:
+            st.success(f"✅ You could aim to save **${suggested_savings:.2f}** this month.")
 
-        stock_suggestions = fetch_and_predict_stocks(suggested_savings)
-        st.markdown("---")
-        st.subheader("📈 Stock Suggestions Based on Your Budget")
-        for ticker, predicted_price in stock_suggestions.items():
-            st.write(f"**{ticker}**: Predicted Price for Next Day: ${predicted_price.item():.2f}")
+        # Show the changes made to non-necessities
+            changes_made = []
+            for (category, original_value), (adjusted_category, adjusted_value) in zip(non_necessities, adjusted_non_necessities):
+                if original_value != adjusted_value:
+                    change = original_value - adjusted_value
+                    changes_made.append(f"**{adjusted_category}**: Adjusted by **${change:.2f}**")
+
+            if changes_made:
+                st.write("⚠️ Key Updates:")
+                for change in changes_made:
+                    st.write(change)
+
+            st.markdown("---")
+            st.subheader("💡 Suggested Budget Breakdown")
+            for category, value in necessities:
+                st.write(f"- Necessity: **{category}**: ${value:.2f}")
+            for category, value in adjusted_non_necessities:
+                st.write(f"- Non-Necessity: **{category}**: ${value:.2f}")
+            st.write(f"- 💾 **Savings**: **${suggested_savings:.2f}**")
+
+            # Fetch and display stock suggestions
+            stock_suggestions = fetch_and_predict_stocks(suggested_savings)
+            st.markdown("---")
+            st.subheader("📈 Stock Suggestions Based on Your Budget")
+            for ticker, predicted_price in stock_suggestions.items():
+                st.write(f"**{ticker}**: Predicted Price for Next Day: ${predicted_price:.2f}")

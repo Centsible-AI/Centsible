@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import torch
 import sqlite3
+import os
 from ai import train_model, fetch_and_predict_stocks, adjust_non_necessities_for_savings, suggest_budget
 
 # --- Custom CSS for Enhanced Styling ---
@@ -132,37 +133,54 @@ def logout():
 if not st.session_state.logged_in:
     # Define logo properties (adjust path and size as needed)
     logo_path = "logo.png"  # Make sure logo.png is in the same folder as the script
-    logo_width = 50       # Adjust the width (in pixels) as desired
+    logo_width = 100       # Adjust the width (in pixels) as desired
 
     # Construct the HTML for the title with the image
-    title_html = f"""
-    <h1 style='text-align: center;'>
-        <img src="{logo_path}" alt="Centsible Logo" style="vertical-align: middle; margin-right: 10px;" width="{logo_width}">
-        Centsible
-    </h1>
-    """
-    st.markdown(title_html, unsafe_allow_html=True) # Use the HTML string here
+    
+    # st.image("logo.png", width=150)  # Make sure the path is correct
+    # # st.markdown(f"""
+    # # <h1 style='text-align: center;'>
+    # #     Centsible
+    # # </h1>
+    # # """, unsafe_allow_html=True) # Use the HTML string here
+
+    # st.markdown(
+    # f"""
+    # <div style="text-align: center;">
+    #     <img src="data:image/png;base64,{"logo.png"}" alt="Logo" width="200">
+    # </div>
+    # """,
+    # unsafe_allow_html=True)
+
+    logo_path = "logo.png"  # Adjust this if needed
+
+    if os.path.exists(logo_path):
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.image(logo_path, width=300)
+    else:
+        st.error(f"Could not find logo image at: {logo_path}")
 
     st.markdown("<h3 style='text-align: center;'>Make Every Cent Count!</h3>", unsafe_allow_html=True)
     with st.container():
         # ... (rest of the login/signup code remains the same) ...
-    with st.container():
-        st.markdown("<div class='main-container'>", unsafe_allow_html=True)
-        tabs = st.tabs(["Login", "Sign Up"])
-        with tabs[0]:
-            with st.form("login_form", clear_on_submit=True):
-                username = st.text_input("Username", key="login_username", placeholder="Enter your username")
-                password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
-                if st.form_submit_button("🚪 Login"):
-                    login(username, password)
-        with tabs[1]:
-            with st.form("signup_form", clear_on_submit=True):
-                username = st.text_input("Username", key="signup_username", placeholder="Choose a username")
-                password = st.text_input("Password", type="password", key="signup_password", placeholder="Choose a password")
-                if st.form_submit_button("📝 Sign Up"):
-                    signup(username, password)
-        st.markdown("</div>", unsafe_allow_html=True)
-    st.stop()
+        with st.container():
+            st.markdown("<div class='main-container'>", unsafe_allow_html=True)
+            tabs = st.tabs(["Login", "Sign Up"])
+            with tabs[0]:
+                with st.form("login_form", clear_on_submit=True):
+                    username = st.text_input("Username", key="login_username", placeholder="Enter your username")
+                    password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
+                    if st.form_submit_button("🚪 Login"):
+                        login(username, password)
+            with tabs[1]:
+                with st.form("signup_form", clear_on_submit=True):
+                    username = st.text_input("Username", key="signup_username", placeholder="Choose a username")
+                    password = st.text_input("Password", type="password", key="signup_password", placeholder="Choose a password")
+                    if st.form_submit_button("📝 Sign Up"):
+                        signup(username, password)
+            st.markdown("</div>", unsafe_allow_html=True)
+        st.stop()
 
 # --- Main App: Sidebar Navigation ---
 with st.sidebar:

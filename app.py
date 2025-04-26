@@ -130,8 +130,22 @@ def logout():
 
 # --- Login/Signup UI ---
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align: center;'>💸 Centsible</h1>", unsafe_allow_html=True)
+    # Define logo properties (adjust path and size as needed)
+    logo_path = "logo.png"  # Make sure logo.png is in the same folder as the script
+    logo_width = 50       # Adjust the width (in pixels) as desired
+
+    # Construct the HTML for the title with the image
+    title_html = f"""
+    <h1 style='text-align: center;'>
+        <img src="{logo_path}" alt="Centsible Logo" style="vertical-align: middle; margin-right: 10px;" width="{logo_width}">
+        Centsible
+    </h1>
+    """
+    st.markdown(title_html, unsafe_allow_html=True) # Use the HTML string here
+
     st.markdown("<h3 style='text-align: center;'>Make Every Cent Count!</h3>", unsafe_allow_html=True)
+    with st.container():
+        # ... (rest of the login/signup code remains the same) ...
     with st.container():
         st.markdown("<div class='main-container'>", unsafe_allow_html=True)
         tabs = st.tabs(["Login", "Sign Up"])

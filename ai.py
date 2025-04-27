@@ -2,18 +2,23 @@ import numpy as np
 import torch
 from sklearn.preprocessing import StandardScaler
 import random
+import requests
+import time
+
+# Alpha Vantage API key (Replace this with your actual API key)
+ALPHA_VANTAGE_API_KEY = "47A3697IO5CCP5QC"
+BASE_URL = "https://www.alphavantage.co/query"
 
 # Train a model to predict savings based on expense categories
 def train_model(num_categories, monthly_income):
-    # Dummy model - replace with an actual model for better predictions
+    # Simple neural network model for savings prediction
     model = torch.nn.Sequential(
         torch.nn.Linear(num_categories, 64),
         torch.nn.ReLU(),
         torch.nn.Linear(64, 1)
     )
 
-    # Generate some fake training data for simplicity
-    # In real use, you would train this model on real historical data
+    # Generate fake training data for simplicity (real data should be used for training)
     X_train = np.random.rand(100, num_categories)
     y_train = np.random.rand(100, 1) * monthly_income  # Predicted savings between 0 and monthly_income
 
@@ -41,13 +46,51 @@ def train_model(num_categories, monthly_income):
 
     return model, scaler_x, scaler_y
 
-# Function to predict stock prices based on savings
+# Function to fetch and predict stock prices based on savings
 def fetch_and_predict_stocks(savings_amount):
-    # Dummy stock predictions - replace with actual stock prediction logic
+    """
+    Fetches stock price predictions from Alpha Vantage API based on available savings.
+    """
+    # Select stock tickers for prediction
     stock_tickers = ['AAPL', 'GOOG', 'AMZN', 'TSLA', 'MSFT']
-    predicted_prices = {ticker: random.uniform(100, 5000) for ticker in stock_tickers}
     
-    return predicted_prices
+    # Make API calls to get the last closing prices for these stocks
+    stock_predictions = {}
+
+    for ticker in stock_tickers:
+        ps = {
+            "function": "TIME_SERIES_DAILY",
+            "symbol": ticker,
+            "apikey": ALPHA_VANTAGE_API_KEY
+        }
+        
+        try:
+            response = requests.get(BASE_URL, params=ps)
+            # Log the response status and content for debugging
+            print(f"Fetching data for {ticker}")
+            print(f"Response Status: {response.status_code}")
+            # if response.status_code == 200:
+            #     print(f"Response Content: {response.json()}")
+            
+            data = response.json()
+            # Ensure data was returned correctly and check for the right key
+            if "Time Series (Daily)" in data:
+                # Get the most recent trading day and its closing price
+                last_trading_day = list(data["Time Series (Daily)"].keys())[0]
+                last_close = data["Time Series (Daily)"][last_trading_day]["4. close"]
+                stock_predictions[ticker] = float(last_close)
+            else:
+                # If no data returned, provide a more descriptive error message
+                stock_predictions[ticker] = f"Error: No valid data for {ticker}"
+        except requests.exceptions.RequestException as e:
+            stock_predictions[ticker] = f"Error fetching data: {str(e)}"
+        except Exception as e:
+            stock_predictions[ticker] = f"Error: {str(e)}"
+        
+        # Sleep for a short time between requests to avoid hitting rate limits
+        time.sleep(12)  # Adjust sleep time based on your API limit
+
+    return stock_predictions
 
 # Adjust non-necessity expenses to maximize savings
 def adjust_non_necessities_for_savings(non_necessities, suggested_spending):

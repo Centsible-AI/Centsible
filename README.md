@@ -52,8 +52,7 @@ Centsible operates on a subscription-based model at **$8.99 per month**—a pric
 - **Raghuram Duvvuri:** Lead Developer with expertise in Java, Python, HTML/CSS/JavaScript, and C++, responsible for building and designing the prototype.
 - **Akhil Kotikalapudi:** Financial Research Specialist, merging current market research with app design decisions.
 - **Daksh Bhardwaj:** Financial Operations Lead, who brings in-depth economic insight and years of investment experience.
-- **Braiden Martin:** Co-Market Manager, driving consumer engagement and ensuring the app meets real-world needs through user feedback and surveys.
-- **Shiven Sunkuru:** Co-Market Manager, driving consumer engagement and ensuring the app meets real-world needs through user feedback and surveys.
+- **Varun Krishnan:** Co-Market Manager, driving consumer engagement and ensuring the app meets real-world needs through user feedback and surveys.
 
 ## Technologies Used
 
